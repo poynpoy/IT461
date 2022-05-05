@@ -1,6 +1,7 @@
+from flask import g
 from db import Db
 
-class DogModel():
+class Dog():
     def sanitize(self, dogs):
         if not isinstance(dogs, (list, tuple)):
             dogs = [dogs]
@@ -13,7 +14,7 @@ class DogModel():
             clean_dogs.append(dog)
         return clean_dogs
 
-    def create(self, dogs):
+    def post(self, dogs):
         if not isinstance(dogs, (list, tuple)):
             dogs = [dogs]
         clean_dogs = self.sanitize(dogs)
@@ -27,7 +28,7 @@ class DogModel():
         result = db.transactional(queries)
         return dogs
 
-    def read(self, filters=None):
+    def get(self, filters=None):
         db = Db.get_instance()
         if filters is not None:
             if 'id' in filters:
@@ -39,7 +40,7 @@ class DogModel():
         dogs = db.fetchall(sql)
         return dogs
 
-    def update(self, dogs):
+    def put(self, dogs):
         if not isinstance(dogs, (list, tuple)):
             dogs = [dogs]
         clean_dogs = self.sanitize(dogs)
