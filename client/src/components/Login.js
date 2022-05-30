@@ -3,11 +3,10 @@ import useAuth from '../hooks/useAuth';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 
 import axios from '../api/axios';
-const LOGIN_URL = '/auth';
+const LOGIN_URL = '/login';
 
 const Login = () => {
-    const { setAuth } = useAuth();
-
+    const { auth, setAuth, keepLogin } = useAuth();
     const navigate = useNavigate();
     const location = useLocation();
     const from = location.state?.from?.pathname || "/";
@@ -20,6 +19,9 @@ const Login = () => {
     const [errMsg, setErrMsg] = useState('');
 
     useEffect(() => {
+        if (auth?.accessToken) {
+            navigate(from, { replace: true });
+        }
         userRef.current.focus();
     }, [])
 
@@ -32,26 +34,35 @@ const Login = () => {
 
         try {
             const response = await axios.post(LOGIN_URL,
-                JSON.stringify({ user, pwd }),
+                JSON.stringify({
+                    username: user,
+                    password: pwd
+                }),
                 {
-                    headers: { 'Content-Type': 'application/json' },
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
                     withCredentials: true
                 }
             );
-            console.log(JSON.stringify(response?.data));
-            //console.log(JSON.stringify(response));
-            const accessToken = response?.data?.accessToken;
-            const roles = response?.data?.roles;
-            setAuth({ user, pwd, roles, accessToken });
+            console.log(typeof(response), response);
+            const accessToken = response?.data?.token;
+            if (!accessToken) {
+                throw new Error('Access token not found.');
+            }
+            const userLogin = { user: 2001, pwd, accessToken };
+            setAuth(userLogin);
+            keepLogin(userLogin);
             setUser('');
             setPwd('');
+            console.log(from, accessToken);
             navigate(from, { replace: true });
         } catch (err) {
             if (!err?.response) {
                 setErrMsg('No Server Response');
             } else if (err.response?.status === 400) {
                 setErrMsg('Missing Username or Password');
-            } else if (err.response?.status === 401) {
+            } else if (err.response?.status === 403) {
                 setErrMsg('Unauthorized');
             } else {
                 setErrMsg('Login Failed');
